@@ -1,0 +1,21 @@
+name: Standalone simulator
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config qt6-base-dev qt6-base-dev-tools qmake6 libfontconfig1-dev libvulkan-dev mesa-vulkan-drivers libxkbcommon-dev libwayland-dev
+      - name: macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install qt
+      - name: Build and smoke test without Omarchy
+        run: make test-simulator

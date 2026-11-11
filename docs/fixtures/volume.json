@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "selected": "codex",
+  "mode": "volume",
+  "providers": {"codex": {"enabled": false, "ready": false, "limits": []}},
+  "volume": {"percent": 65, "muted": false, "available": true}
+}

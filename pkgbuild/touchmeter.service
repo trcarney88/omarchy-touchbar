@@ -1,0 +1,17 @@
+[Unit]
+Description=Rune Touch Bar apps: AI usage, function keys, and volume
+After=graphical-session.target
+PartOf=graphical-session.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/brightnessctl -q -d 228600000.dsi.0 set 25%%
+ExecStart=/usr/bin/touchmeter open
+ExecStopPost=-/usr/bin/brightnessctl -q -d 228600000.dsi.0 set 0
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=5
+
+[Install]
+WantedBy=graphical-session.target

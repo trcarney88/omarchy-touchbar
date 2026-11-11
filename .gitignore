@@ -1,0 +1,5 @@
+/build/
+/ui/target/
+/pkgbuild/pkg/
+/pkgbuild/src/
+/pkgbuild/*.pkg.tar.*

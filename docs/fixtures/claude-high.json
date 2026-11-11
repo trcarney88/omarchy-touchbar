@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "selected": "claude",
+  "mode": "usage",
+  "now": "2026-11-10T12:00:00Z",
+  "providers": {
+    "claude": {
+      "enabled": true,
+      "ready": true,
+      "limitsFetchedAt": 1794312000000,
+      "limitsStale": false,
+      "limits": [
+        {"label": "Session (5-hour)", "percent": 0.96, "resetsAt": "2026-11-10T14:00:00Z"},
+        {"label": "Weekly (7-day)", "percent": 0.61, "resetsAt": "2026-11-14T12:00:00Z"}
+      ]
+    },
+    "codex": {"enabled": false, "ready": false, "limits": []}
+  }
+}

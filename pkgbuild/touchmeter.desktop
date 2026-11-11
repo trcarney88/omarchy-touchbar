@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Touchmeter
+Name[da]=Touchmeter
+Comment=Touch Bar apps for AI usage, function keys, and volume
+Comment[da]=Touch Bar-apps til AI-forbrug, funktionstaster og lydstyrke
+Exec=touchmeter open
+Icon=touchmeter
+Terminal=false
+Categories=Utility;

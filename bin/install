@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+cd "$ROOT/pkgbuild"
+makepkg -f
+PACKAGE="$(makepkg --packagelist)"
+# Use a terminal password prompt when launched there; agents use graphical auth.
+elevate() {
+  if [ -t 0 ] && [ -t 1 ]; then sudo "$@"; else pkexec "$@"; fi
+}
+elevate pacman -U --noconfirm "$PACKAGE"
+elevate udevadm control --reload
+for device in /sys/class/input/event*; do
+  [ "$(cat "$device/device/phys" 2>/dev/null || true)" = apple_z2 ] || continue
+  elevate udevadm trigger --action=change --subsystem-match=input --sysname-match="${device##*/}"
+done
+udevadm settle
+systemctl --user daemon-reload
+systemctl --user enable touchmeter.service
+systemctl --user restart touchmeter.service

@@ -1,0 +1,3 @@
+# Give only the active local session access to the Apple silicon Touch Bar.
+# No keyboard, trackpad, generic input group, or uinput permissions are granted.
+SUBSYSTEM=="input", KERNEL=="event[0-9]*", ATTRS{phys}=="apple_z2", ATTRS{name}=="MacBookPro* Touch Bar", TAG+="uaccess"

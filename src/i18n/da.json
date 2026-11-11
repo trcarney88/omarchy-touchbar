@@ -1,0 +1,17 @@
+{
+  "5 HOUR": "5 TIMER",
+  "WEEKLY": "UGENTLIG",
+  "%1% used": "%1% brugt",
+  "reset due": "nulstilles nu",
+  "STALE · retrying": "GAMMEL · prøver igen",
+  "LIVE · used": "LIVE · brugt",
+  "Usage data unavailable": "Forbrugsdata utilgængelige",
+  "Limits unavailable": "Grænser utilgængelige",
+  "Sign-in required": "Log ind på udbyderen",
+  "reset unknown": "nulstilling ukendt",
+  "~%1m to limit": "~%1m til grænsen",
+  "Audio unavailable": "Lyd utilgængelig",
+  "Codex sign-in required": "Log ind på Codex",
+  "Codex limits unavailable": "Codex-grænser utilgængelige",
+  "Space: refresh · Q: quit · ?: help": "Mellemrum: opdater · Q: afslut · ?: hjælp"
+}
