@@ -2,6 +2,7 @@
 name = "touchmeter-ui"
 version = "0.3.0"
 edition = "2024"
+license = "MIT"
 
 [lib]
 crate-type = ["rlib"]

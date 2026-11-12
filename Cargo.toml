@@ -2,6 +2,7 @@
 name = "touchmeter"
 version = "0.8.0"
 edition = "2024"
+license = "MIT"
 
 [features]
 default = []

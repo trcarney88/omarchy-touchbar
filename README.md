@@ -1,6 +1,16 @@
+> This is public source: read it, use it, or fork it. I maintain it for my own
+> personal use and make changes when I want to; I don't promise ongoing
+> maintenance, support, or review of contributions. Want changes? Fork it and
+> go nuts. The [MIT license](LICENSE) grants the rights it describes; “personal
+> use” is my maintenance policy, not an extra restriction on the license.
+
 ![Touch Bar app launcher](docs/menu.png)
 
 # Touchmeter
+
+## For agents
+
+See [AGENTS.md](AGENTS.md) and the [Touchmeter development skill](.agents/skills/touchmeter-development/SKILL.md) for repository-specific safety and testing guidance. GitHub Actions is not configured; run the documented checks manually.
 
 Touch Bar apps for the Apple silicon MacBook, rendered with
 [Rune](https://github.com/anomalyco/rune). Starts at an extensible launcher with
