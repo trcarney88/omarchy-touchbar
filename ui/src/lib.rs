@@ -1,12 +1,12 @@
 //! Rune renders offscreen; the existing unprivileged host owns the DRM lease and input safety.
-use rune::render::{Gpu, OFFSCREEN_FORMAT, Offscreen, Renderer};
+use rune::render::{Gpu, Offscreen, Renderer, OFFSCREEN_FORMAT};
 use rune::text::Icon;
-use rune::{Color, Cx, El, Env, Runtime, el, icon, text};
+use rune::{el, icon, text, Color, Cx, El, Env, Runtime};
 use rune_fx::{FireParams, Fx, FxFrame, FxOptions, FxRenderer, FxSlot, Shape};
 use serde::Deserialize;
 use std::{
     ffi::c_void,
-    panic::{AssertUnwindSafe, catch_unwind},
+    panic::{catch_unwind, AssertUnwindSafe},
 };
 
 #[derive(Clone, Default, Deserialize)]
@@ -87,9 +87,26 @@ fn provider_icon(s: &State, index: usize) -> El {
         || label("?", 30.0, ink),
         |i| {
             let logo = icon(i, 34.0).color(ink);
-            if enabled { logo } else { logo.icon_one_color() }
+            if enabled {
+                logo
+            } else {
+                logo.icon_one_color()
+            }
         },
     )
+}
+fn quota_group_start(count: usize, has_status: bool) -> f32 {
+    let count = count.min(2);
+    if count == 0 {
+        return 150.0;
+    }
+    let (left, right) = if has_status {
+        (120.0, 1620.0)
+    } else {
+        (120.0, 1872.0)
+    };
+    let width = count as f32 * 660.0 + count.saturating_sub(1) as f32 * 80.0;
+    left + (right - left - width) / 2.0
 }
 static SPEAKER: Icon = Icon {
     name: "volume",
@@ -287,8 +304,11 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
                 );
             }
         } else {
+            let count = m.limits.len().min(2);
+            let has_status = !m.status.trim().is_empty();
+            let start = quota_group_start(count, has_status);
             for (i, l) in m.limits.iter().take(2).enumerate() {
-                let x = 150.0 + i as f32 * 740.0 + shift;
+                let x = start + i as f32 * 740.0 + shift;
                 let ink = if l.fraction >= 0.9 {
                     color(&m.danger)
                 } else {
@@ -296,6 +316,7 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
                 };
                 root = root.child(
                     label(&l.label, 21.0, fg)
+                        .key(format!("quota-label-{i}"))
                         .w(120.0)
                         .truncate()
                         .absolute(x, 17.0),
@@ -313,20 +334,27 @@ fn view(s: &State, _: &mut Cx<State>) -> El {
                     label(format!("{:.0}%", l.fraction * 100.0), 25.0, fg)
                         .absolute(x + 370.0, 14.0),
                 );
-                root = root
-                    .child(label(format!("↻ {}", l.countdown), 21.0, fg).absolute(x + 460.0, 17.0));
+                root = root.child(
+                    label(format!("↻ {}", l.countdown), 21.0, fg)
+                        .w(200.0)
+                        .truncate()
+                        .absolute(x + 460.0, 17.0),
+                );
             }
-            let x = if m.limits.is_empty() { 150.0 } else { 1640.0 };
-            root = root.child(
-                label(
-                    &m.status,
-                    18.0,
-                    if m.stale { color(&m.warning) } else { muted },
-                )
-                .w(if m.limits.is_empty() { 1680.0 } else { 230.0 })
-                .truncate()
-                .absolute(x + shift, 19.0),
-            );
+            let x = if count == 0 { 150.0 } else { 1640.0 };
+            if count == 0 || has_status {
+                root = root.child(
+                    label(
+                        &m.status,
+                        18.0,
+                        if m.stale { color(&m.warning) } else { muted },
+                    )
+                    .key("quota-status")
+                    .w(if m.limits.is_empty() { 1680.0 } else { 230.0 })
+                    .truncate()
+                    .absolute(x + shift, 19.0),
+                );
+            }
         }
     }
     if m.app != "menu" {
@@ -629,6 +657,70 @@ mod tests {
         );
         rt.frame(0.0);
         rt
+    }
+    #[test]
+    fn quota_group_is_centered_and_stays_inside_its_available_area() {
+        for (n, status, expected) in [
+            (0, false, 150.0),
+            (1, true, 540.0),
+            (2, true, 170.0),
+            (1, false, 666.0),
+            (2, false, 296.0),
+            (3, false, 296.0),
+        ] {
+            assert_eq!(quota_group_start(n, status), expected);
+            if n > 0 {
+                let area = if status {
+                    (120.0, 1620.0)
+                } else {
+                    (120.0, 1872.0)
+                };
+                let group_end = expected + n.min(2) as f32 * 660.0 + (n.min(2) - 1) as f32 * 80.0;
+                assert!(expected >= area.0 && group_end <= area.1);
+                assert!((expected + group_end) / 2.0 - (area.0 + area.1) / 2.0 == 0.0);
+            }
+        }
+    }
+    #[test]
+    fn quota_scene_positions_and_zero_limit_status_transition() {
+        let mut rt = runtime(false, false);
+        rt.update(|s, tx| {
+            s.model.status = "status".into();
+            s.model.limits = vec![
+                Limit {
+                    label: "weekly".into(),
+                    ..Default::default()
+                },
+                Limit {
+                    label: "daily".into(),
+                    ..Default::default()
+                },
+            ];
+            tx.settle();
+        });
+        rt.frame(0.0);
+        assert_eq!(rt.presented("quota-label-0").unwrap().0[0], 168.0);
+        assert_eq!(rt.presented("quota-label-1").unwrap().0[0], 908.0);
+        assert_eq!(
+            rt.presented("back-button").unwrap().0,
+            [1888.0, 6.0, 108.0, 48.0]
+        );
+        rt.update(|s, tx| {
+            s.model.limits.truncate(1);
+            tx.settle();
+        });
+        rt.frame(0.0);
+        assert_eq!(rt.presented("quota-label-0").unwrap().0[0], 538.0);
+        rt.update(|s, tx| {
+            s.model.limits.clear();
+            tx.settle();
+        });
+        rt.frame(0.0);
+        assert!(rt.presented("quota-label-0").is_none());
+        assert_eq!(
+            rt.presented("quota-status").unwrap().0,
+            [148.0, 19.0, 1680.0, 22.5]
+        );
     }
     #[test]
     fn function_hit_targets_match_the_host() {
