@@ -1,0 +1,22 @@
+pkgname=touchmeter
+pkgver=0.8.0
+pkgrel=1
+pkgdesc='Rune Touch Bar apps: AI usage, function keys, and volume control'
+arch=('aarch64')
+license=('MIT')
+depends=('qt6-base' 'qt6-wayland' 'wayland' 'libdrm' 'libevdev' 'libxkbcommon' 'omarchy' 'brightnessctl' 'python' 'vulkan-icd-loader' 'wireplumber')
+makedepends=('wayland-protocols' 'rust' 'cargo')
+options=('!debug')
+build() {
+  "$startdir/../bin/build"
+}
+package() {
+  install -Dm755 "$startdir/../build/touchmeter" "$pkgdir/usr/bin/touchmeter"
+  install -Dm644 "$startdir/touchmeter.desktop" "$pkgdir/usr/share/applications/touchmeter.desktop"
+  install -Dm644 "$startdir/touchmeter.svg" "$pkgdir/usr/share/icons/hicolor/scalable/apps/touchmeter.svg"
+  install -Dm644 "$startdir/touchmeter.service" "$pkgdir/usr/lib/systemd/user/touchmeter.service"
+  install -Dm644 "$startdir/65-touchmeter.rules" "$pkgdir/usr/lib/udev/rules.d/65-touchmeter.rules"
+  install -Dm644 "$startdir/../LICENSE" "$pkgdir/usr/share/licenses/touchmeter/LICENSE"
+  install -Dm644 "$startdir/../ui/LICENSE.rune" "$pkgdir/usr/share/licenses/touchmeter/LICENSE.rune"
+  install -Dm644 "$startdir/../protocols/virtual-keyboard-unstable-v1.xml" "$pkgdir/usr/share/licenses/touchmeter/virtual-keyboard-unstable-v1.xml"
+}

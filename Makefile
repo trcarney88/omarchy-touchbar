@@ -1,17 +1,34 @@
-.PHONY: simulator run-simulator test-simulator build test
+.PHONY: simulator run-simulator test-simulator build test rust-simulator run-rust-simulator legacy-build legacy-test legacy-simulator legacy-run-simulator
 
-# No Omarchy, Touch Bar, DRM, evdev, or generated Wayland protocols required.
+# Rust is the canonical developer build. Hardware activation remains unvalidated.
+rust-simulator:
+	$(MAKE) build
+
+run-rust-simulator:
+	$(MAKE) run-simulator ARGS="$(ARGS)"
+
 simulator:
 	./bin/build-simulator
 
 run-simulator: simulator
-	./build/simulator/touchmeter-simulator $(ARGS)
+	./bin/simulate $(ARGS)
 
-test-simulator: simulator
-	TOUCHMETER_BINARY="$(CURDIR)/build/simulator/touchmeter-simulator" python3 tests/test_standalone.py
+test-simulator: test
 
 build:
 	./bin/build
 
 test:
 	./bin/test
+
+legacy-build:
+	./bin/build-legacy
+
+legacy-test:
+	./bin/test-legacy
+
+legacy-simulator:
+	./bin/build-simulator-legacy
+
+legacy-run-simulator: legacy-simulator
+	./bin/simulate-legacy $(ARGS)

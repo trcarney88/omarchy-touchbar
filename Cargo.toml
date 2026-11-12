@@ -1,0 +1,38 @@
+[package]
+name = "touchmeter"
+version = "0.8.0"
+edition = "2024"
+
+[features]
+default = []
+linux-hardware = [
+    "dep:wayland-client",
+    "dep:wayland-protocols",
+    "dep:wayland-scanner",
+    "dep:drm",
+    "dep:evdev",
+    "dep:zbus",
+    "dep:xkbcommon",
+    "dep:rusqlite",
+]
+
+[dependencies]
+touchmeter-ui = { path = "ui" }
+winit = "0.30"
+softbuffer = { version = "0.4", default-features = false, features = ["x11", "x11-dlopen", "wayland", "wayland-dlopen"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+chrono = { version = "0.4", features = ["serde"] }
+libc = "0.2"
+png = "0.17"
+signal-hook = "0.3"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+wayland-client = { version = "0.31", optional = true }
+wayland-protocols = { version = "0.32", features = ["client", "staging", "unstable"], optional = true }
+wayland-scanner = { version = "0.31", optional = true }
+drm = { version = "0.14", optional = true }
+evdev = { version = "0.13", optional = true }
+zbus = { version = "5", features = ["blocking-api"], optional = true }
+xkbcommon = { version = "0.9", optional = true }
+rusqlite = { version = "0.37", features = ["bundled"], optional = true }

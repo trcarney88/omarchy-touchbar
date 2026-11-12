@@ -9,9 +9,80 @@ the far right** that returns to the launcher; navigation activates on release
 inside its original button. A shared app catalog in `src/controls.cpp` defines
 launcher entries and hit targets, ready for more apps without another mode toggle.
 
+## Rust desktop simulator (default)
+
+The repository-root Cargo executable is the default build and interactive desktop
+simulator. It uses winit 0.30 and softbuffer with Rune's typed UI API; it does not
+require Qt. The simulator, preview PNG renderer, CLI, configuration, language and
+monitor selection are ported. Native macOS support is intended but has not been
+validated; CI configuration is not evidence of a successful macOS run. See
+[`docs/macos-validation.md`](docs/macos-validation.md) for the manual checklist.
+
+The hardware feature modules remain experimental and partial. A safety audit and
+real-hardware validation are still blocked; root physical-panel access is rejected.
+C++/Qt remains the physical backend until its replacement is verified. Do not treat
+the experimental `PKGBUILD.rust` as a supported installation workflow.
+
+```sh
+cargo run --release -- simulate
+cargo run --release -- simulate --scenario fire
+# Equivalent Makefile wrappers:
+make rust-simulator
+make run-rust-simulator ARGS="--scenario fire"
+cargo test --locked
+```
+
+The Rust simulator supports all ten built-in scenarios, page flags (`--menu`, `--ai`,
+`--functions`, `--providers`, `--volume`), `--fixture`, `--monitor` (index or name),
+and `--fullscreen`. F11 toggles fullscreen; Escape leaves fullscreen or closes the
+window; M opens the menu. Mouse buttons, provider picker, F-key highlighting, and
+simulated volume mute/drag are interactive. Live fixture polling safely falls back
+to the fictional menu if a fixture is invalid or deleted. Data remains fictional:
+Rust simulation never accesses real audio, injects desktop keys, or runs collectors.
+Monitor listing is supported. Build natively for your platform; the executable still
+needs OS graphics/window and font libraries.
+
+```sh
+cargo run --release -- simulate --fixture docs/fixtures/fire.json
+```
+
+The Rust root `test` CLI supports the existing command set, scenarios, `load`,
+`status`, and `clear`; `--simulator` may appear anywhere after `test` to target
+simulator windows. Simulator overrides win over the base fixture or scene, poll
+every 500 ms, and clearing them restores the latest valid base. Generated simulator
+data uses a frozen clock; loaded fixtures retain their supplied clock. Without
+`--simulator`, the CLI targets the physical test-state path, which can affect an
+existing legacy physical service through the shared state file; root commands do
+not all operate in memory. Rust simulator state itself has no physical side effects.
+
+```sh
+target/release/touchmeter test set claude --enabled --short 95 --burn-minutes 20 --simulator
+target/release/touchmeter test clear --simulator
+```
+
+The Rust `config` CLI supports `path`, `show`, `get`, `set`, and `reset`, including
+the live fire-threshold setting, polled every 500 ms. CLI state files are compatible
+with C++ targets; no existing installed service behavior is changed by this
+experimental migration.
+
+```sh
+target/release/touchmeter config path
+target/release/touchmeter config show
+target/release/touchmeter config get fire.trigger-minutes
+target/release/touchmeter config set fire.trigger-minutes 60
+target/release/touchmeter config reset fire.trigger-minutes
+```
+
+Legacy C++ build paths remain available, and the installed service is unchanged.
+Rust hardware modules/adapters are not yet a validated physical backend; real audio,
+credential access, collectors and desktop key injection must not be assumed ported.
+
+The sections below describe shared and legacy workflows; commands that explicitly
+use `build-legacy` or `run-legacy-simulator` select the C++/Qt implementation.
+
 ## Desktop simulator
 
-### Standalone build (Linux and macOS)
+### Legacy C++/Qt standalone build (Linux and macOS)
 
 No Omarchy installation or Touch Bar is needed. This build excludes DRM leasing,
 evdev, virtual keyboard injection, session D-Bus, and generated Wayland protocols.
@@ -32,10 +103,10 @@ sudo apt install build-essential pkg-config qt6-base-dev qt6-base-dev-tools qmak
   libfontconfig1-dev libvulkan-dev mesa-vulkan-drivers libxkbcommon-dev libwayland-dev
 # On a Wayland desktop, also install qt6-wayland.
 
-make simulator
-make run-simulator
-make run-simulator ARGS="--scenario fire --fullscreen"
-make test-simulator
+make build-legacy-simulator
+make run-legacy-simulator
+make run-legacy-simulator ARGS="--scenario fire --fullscreen"
+make test-legacy-simulator
 ```
 
 If Qt isn't discoverable, set `QMAKE=/path/to/Qt6/bin/qmake`. Homebrew Qt is
@@ -285,15 +356,23 @@ still suppress it. A frozen-clock example is in `docs/fixtures/fire.json`.
 
 ## Build and install
 
-Dependencies: Rust/Cargo (edition 2024), Qt 6 base, libdrm, libevdev, libxkbcommon,
+The default `make` / `bin/build` path builds the Qt-free Rust executable; it needs
+a stable Rust toolchain plus platform graphics, windowing and font libraries.
+Use the explicit `build-legacy` / `bin/build-legacy` paths for the C++/Qt backend.
+The installed service and existing installation workflow remain legacy and unchanged.
+Do not infer that the experimental Rust package is installable or hardware-ready.
+
+Legacy dependencies: Rust/Cargo (edition 2024), Qt 6 base, libdrm, libevdev, libxkbcommon,
 wayland-client, wayland-protocols, qmake6, make, a C++17 compiler, Python 3, Omarchy,
 brightnessctl, Qt 6 Wayland (for the desktop simulator), WirePlumber (`wpctl`), a PipeWire audio session, Vulkan loader and a
 working Vulkan driver (or Mesa lavapipe).
 The first build downloads Rune and Cargo dependencies.
 
 ```sh
-bin/build
-bin/test
+make
+cargo test --locked
+bin/build-legacy
+bin/test-legacy
 bin/install
 ```
 

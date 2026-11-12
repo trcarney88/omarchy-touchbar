@@ -1,0 +1,20 @@
+#!/bin/sh
+set -eu
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+QMAKE="${QMAKE:-qmake6}"
+if ! command -v "$QMAKE" >/dev/null 2>&1; then
+    if command -v qmake >/dev/null 2>&1; then
+        QMAKE=qmake
+    elif command -v brew >/dev/null 2>&1; then
+        QMAKE="$(brew --prefix qt)/bin/qmake"
+    fi
+fi
+if ! command -v "$QMAKE" >/dev/null 2>&1; then
+    echo "Qt 6 qmake not found. Install Qt 6 or set QMAKE=/path/to/Qt6/bin/qmake." >&2
+    exit 1
+fi
+cargo build --locked --release --manifest-path "$ROOT/ui/Cargo.toml" -j2
+mkdir -p "$ROOT/build/simulator"
+cd "$ROOT/build/simulator"
+"$QMAKE" "$ROOT/simulator.pro"
+make -j2

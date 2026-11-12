@@ -1,0 +1,19 @@
+{
+  "Session": "Session",
+  "Weekly": "Ugentlig",
+  "Simulation": "Simulation",
+  "SIMULATED · No hardware or services connected": "SIMULERET · Ingen hardware eller tjenester tilsluttet",
+  "2h 14m": "2 t 14 min",
+  "3d 8h": "3 d 8 t",
+  "5 HOUR": "5 TIMER",
+  "WEEKLY": "UGENTLIG",
+  "TEST": "TEST",
+  "Sign-in required": "Log ind påkrævet",
+  "Usage unavailable": "Forbrug ikke tilgængeligt",
+  "Simulated unavailable limits": "Simulerede grænser ikke tilgængelige",
+  "reset unknown": "nulstilling ukendt",
+  "reset due": "nulstilling nu",
+  "%1m to limit": "%1 min. til grænse",
+  "%1h %2m": "%1 t %2 min",
+  "%1d %2h": "%1 d %2 t"
+}

@@ -1,0 +1,19 @@
+{
+  "Session": "Session",
+  "Weekly": "Weekly",
+  "Simulation": "Simulation",
+  "SIMULATED · No hardware or services connected": "SIMULATED · No hardware or services connected",
+  "2h 14m": "2h 14m",
+  "3d 8h": "3d 8h"
+  ,"5 HOUR": "5 HOUR",
+  "WEEKLY": "WEEKLY",
+  "TEST": "TEST",
+  "Sign-in required": "Sign-in required",
+  "Usage unavailable": "Usage unavailable",
+  "Simulated unavailable limits": "Simulated unavailable limits",
+  "reset unknown": "reset unknown",
+  "reset due": "reset due",
+  "%1m to limit": "%1m to limit",
+  "%1h %2m": "%1h %2m",
+  "%1d %2h": "%1d %2h"
+}
