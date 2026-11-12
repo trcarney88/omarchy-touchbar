@@ -11,7 +11,8 @@ ExecStart=/usr/bin/touchmeter open
 ExecStopPost=-/usr/bin/brightnessctl -q -d 228600000.dsi.0 set 0
 Restart=on-failure
 RestartSec=10
-TimeoutStopSec=5
+RestartPreventExitStatus=78
+TimeoutStopSec=infinity
 
 [Install]
 WantedBy=graphical-session.target

@@ -406,11 +406,7 @@ where
     F: FnOnce(),
     L: FnOnce(),
 {
-    if fixture_active {
-        fixture()
-    } else {
-        live()
-    }
+    if fixture_active { fixture() } else { live() }
 }
 
 #[cfg(all(target_os = "linux", feature = "linux-hardware"))]
@@ -629,8 +625,8 @@ where
 pub fn run(mut model: touchmeter_ui::Model) -> Result<(), String> {
     use std::{
         sync::{
-            atomic::{AtomicBool, Ordering},
             Arc,
+            atomic::{AtomicBool, Ordering},
         },
         thread,
         time::Instant,
@@ -696,7 +692,22 @@ pub fn run(mut model: touchmeter_ui::Model) -> Result<(), String> {
         thread::sleep(Duration::from_millis(8));
         let now = Instant::now();
         if model.fire && diag.sample_due(now, diagnostic_at) {
-            eprintln!("Touchmeter runtime diag: iterations={iterations} render={}/{} render_ms={} present={}/{} present_ms={} drained_touches={drained_touches} rejected_begin_app_mismatch={rejected_begins} rejected_begin_auth={} dirty={dirty} on={on} idle={idle} authorized={} fire={} picker={} app={} last_presented_app={} time={:.3}", diag.render_completed, diag.render_started, render_total.as_millis(), diag.present_completed, diag.present_started, present_total.as_millis(), diag.auth_rejected, core.allowed(now), model.fire, model.picker, model.app, last_presented_app, model.time);
+            eprintln!(
+                "Touchmeter runtime diag: iterations={iterations} render={}/{} render_ms={} present={}/{} present_ms={} drained_touches={drained_touches} rejected_begin_app_mismatch={rejected_begins} rejected_begin_auth={} dirty={dirty} on={on} idle={idle} authorized={} fire={} picker={} app={} last_presented_app={} time={:.3}",
+                diag.render_completed,
+                diag.render_started,
+                render_total.as_millis(),
+                diag.present_completed,
+                diag.present_started,
+                present_total.as_millis(),
+                diag.auth_rejected,
+                core.allowed(now),
+                model.fire,
+                model.picker,
+                model.app,
+                last_presented_app,
+                model.time
+            );
             diagnostic_at = now;
             sampled_render_marker = true;
         }
@@ -1327,7 +1338,15 @@ pub fn run(mut model: touchmeter_ui::Model) -> Result<(), String> {
             last_presented_app = model.app.clone();
         }
         if model.fire && now.duration_since(diagnostic_at) >= Duration::from_secs(2) {
-            eprintln!("Touchmeter runtime diag: iterations={iterations} renders={rendered} presents={presented} drained_touches={drained_touches} rejected_begins={rejected_begins} dirty={dirty} fresh={} fire={} picker={} app={} last_presented_app={} time={:.3}", core.allowed(now), model.fire, model.picker, model.app, last_presented_app, model.time);
+            eprintln!(
+                "Touchmeter runtime diag: iterations={iterations} renders={rendered} presents={presented} drained_touches={drained_touches} rejected_begins={rejected_begins} dirty={dirty} fresh={} fire={} picker={} app={} last_presented_app={} time={:.3}",
+                core.allowed(now),
+                model.fire,
+                model.picker,
+                model.app,
+                last_presented_app,
+                model.time
+            );
             diagnostic_at = now;
         }
         if authorized

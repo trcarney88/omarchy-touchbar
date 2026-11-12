@@ -129,7 +129,7 @@ pub struct SessionAdapter {
 impl SessionAdapter {
     pub fn start() -> zbus::Result<Self> {
         use zbus::{
-            blocking::{connection::Builder, Proxy},
+            blocking::{Proxy, connection::Builder},
             zvariant::OwnedObjectPath,
         };
         let connection = Builder::system()?

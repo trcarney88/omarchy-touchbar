@@ -311,11 +311,7 @@ impl CredentialContext {
             .filter(|s| !s.trim().is_empty())
             .map(|s| {
                 let p = expand(s, &self.home);
-                if p.is_absolute() {
-                    p
-                } else {
-                    root.join(p)
-                }
+                if p.is_absolute() { p } else { root.join(p) }
             });
         let db = configured.unwrap_or_else(|| {
             let a = root.join("opencode.db");
@@ -323,11 +319,7 @@ impl CredentialContext {
                 a
             } else {
                 let b = root.join("opencode-v2.db");
-                if b.is_file() {
-                    b
-                } else {
-                    a
-                }
+                if b.is_file() { b } else { a }
             }
         });
         if opencode_db(&db) {

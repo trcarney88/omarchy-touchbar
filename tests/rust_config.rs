@@ -122,6 +122,51 @@ fn binary_config_cli_is_headless_and_uses_xdg_directory() {
 }
 
 #[test]
+fn binary_defaults_and_test_state_are_independent() {
+    let t = Temp::new();
+    let config_home = t.0.join("config-home");
+    let runtime = t.0.join("runtime");
+    fs::create_dir(&runtime).unwrap();
+    let binary = env!("CARGO_BIN_EXE_touchmeter");
+    let invoke = |args: &[&str]| {
+        std::process::Command::new(binary)
+            .args(args)
+            .env("XDG_CONFIG_HOME", &config_home)
+            .env("XDG_RUNTIME_DIR", &runtime)
+            .env_remove("DISPLAY")
+            .env_remove("WAYLAND_DISPLAY")
+            .output()
+            .unwrap()
+    };
+    let default = invoke(&["config", "get", "fire.trigger-minutes"]);
+    assert!(default.status.success());
+    assert_eq!(String::from_utf8(default.stdout).unwrap().trim(), "30");
+    assert!(invoke(&["config", "show"]).status.success());
+    assert!(!config_home.exists());
+    assert!(
+        invoke(&["config", "set", "fire.trigger-minutes", "60"])
+            .status
+            .success()
+    );
+    let original = fs::read(config_home.join("touchmeter/config.json")).unwrap();
+    assert!(
+        !invoke(&["config", "set", "fire.trigger-minutes", "0"])
+            .status
+            .success()
+    );
+    assert_eq!(
+        fs::read(config_home.join("touchmeter/config.json")).unwrap(),
+        original
+    );
+    assert!(invoke(&["test", "scenario", "fire"]).status.success());
+    assert!(invoke(&["test", "clear"]).status.success());
+    assert_eq!(
+        fs::read(config_home.join("touchmeter/config.json")).unwrap(),
+        original
+    );
+}
+
+#[test]
 fn backup_symlink_and_existing_lock() {
     let t = Temp::new();
     let p = t.file();

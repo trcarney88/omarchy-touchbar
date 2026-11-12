@@ -1,13 +1,9 @@
 //! Rune renders offscreen; the existing unprivileged host owns the DRM lease and input safety.
-use rune::render::{Gpu, Offscreen, Renderer, OFFSCREEN_FORMAT};
+use rune::render::{Gpu, OFFSCREEN_FORMAT, Offscreen, Renderer};
 use rune::text::Icon;
-use rune::{el, icon, text, Color, Cx, El, Env, Runtime};
+use rune::{Color, Cx, El, Env, Runtime, el, icon, text};
 use rune_fx::{FireParams, Fx, FxFrame, FxOptions, FxRenderer, FxSlot, Shape};
 use serde::Deserialize;
-use std::{
-    ffi::c_void,
-    panic::{catch_unwind, AssertUnwindSafe},
-};
 
 #[derive(Clone, Default, Deserialize)]
 #[serde(default)]
@@ -87,11 +83,7 @@ fn provider_icon(s: &State, index: usize) -> El {
         || label("?", 30.0, ink),
         |i| {
             let logo = icon(i, 34.0).color(ink);
-            if enabled {
-                logo
-            } else {
-                logo.icon_one_color()
-            }
+            if enabled { logo } else { logo.icon_one_color() }
         },
     )
 }
@@ -565,55 +557,6 @@ impl Ui {
         self.target.copy(&mut encoder);
         self.gpu.queue.submit(Some(encoder.finish()));
         self.target.read(&self.gpu.device)
-    }
-}
-
-// All calls run on the host's main thread. No panic is allowed across the C ABI.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn touchmeter_ui_new(json: *const u8, len: usize) -> *mut c_void {
-    catch_unwind(AssertUnwindSafe(|| {
-        let model =
-            serde_json::from_slice(unsafe { std::slice::from_raw_parts(json, len) }).ok()?;
-        match Ui::new(model) {
-            Ok(ui) => Some(Box::into_raw(Box::new(ui)).cast()),
-            Err(e) => {
-                eprintln!("touchmeter: Rune initialization failed: {e}");
-                None
-            }
-        }
-    }))
-    .ok()
-    .flatten()
-    .unwrap_or(std::ptr::null_mut())
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn touchmeter_ui_render(
-    ui: *mut c_void,
-    json: *const u8,
-    len: usize,
-    out: *mut u8,
-    out_len: usize,
-) -> bool {
-    if ui.is_null() || out_len != 2008 * 60 * 4 {
-        return false;
-    }
-    catch_unwind(AssertUnwindSafe(|| {
-        let Ok(model) = serde_json::from_slice(unsafe { std::slice::from_raw_parts(json, len) })
-        else {
-            return false;
-        };
-        let pixels = unsafe { &mut *ui.cast::<Ui>() }.render(model);
-        unsafe {
-            std::ptr::copy_nonoverlapping(pixels.as_ptr(), out, pixels.len());
-        }
-        true
-    }))
-    .unwrap_or(false)
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn touchmeter_ui_free(ui: *mut c_void) {
-    if !ui.is_null() {
-        drop(unsafe { Box::from_raw(ui.cast::<Ui>()) });
     }
 }
 

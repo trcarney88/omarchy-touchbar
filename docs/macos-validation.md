@@ -1,8 +1,7 @@
 # Manual macOS validation
 
-This checklist is for the Qt-free Rust desktop simulator, preview renderer and
-CLI. It does not validate the experimental hardware backend. Physical Apple
-Touch Bar access is unsupported on macOS; the hardware feature is Linux-only.
+This checklist is for the Rust desktop simulator, preview renderer and CLI.
+Physical Apple Touch Bar access is Linux-only and is not supported on macOS.
 Do not run a bare physical-target `test` command: root commands default to the
 physical test-state path. All state-changing examples below explicitly use
 `--simulator`. This checkout has not been manually validated on macOS.
@@ -18,8 +17,8 @@ xcode-select --install
 ```
 
 Install stable Rust with rustup, following https://rustup.rs/ (including its
-instructions to configure the shell). Homebrew Qt is not needed for the default
-Rust build. Record macOS version, machine architecture, Rust version, and GPU.
+instructions to configure the shell). Record macOS version, machine architecture,
+Rust version, and GPU.
 
 ```sh
 rustc --version
@@ -28,15 +27,15 @@ cargo test --locked
 cargo build --release --locked
 ```
 
-The Rust default build is Qt-free. It still requires the native OS graphics,
-window and font libraries. Optional dependency inspection:
+The Rust default build requires native OS graphics, window and font libraries.
+Optional dependency inspection:
 
 ```sh
 cargo tree --locked -e features
 ```
 
 The default dependency graph should not require DRM, evdev, zbus or SQLite.
-Report discrepancies rather than installing Qt as a workaround.
+Report discrepancies rather than changing dependencies as a workaround.
 
 ## Isolated simulator checks
 
@@ -107,7 +106,6 @@ logs for failures. Do not include credentials, tokens, or personal auth data.
 | --- | --- |
 | macOS version / machine / OS architecture | |
 | Rust version / GPU | |
-| Qt not installed or required | |
 | `cargo test --locked` | |
 | Release build | |
 | Simulator interactions / isolation | |

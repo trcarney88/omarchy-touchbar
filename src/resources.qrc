@@ -1,5 +1,0 @@
-<RCC><qresource prefix="/">
-  <file>provider_credentials.py</file>
-  <file>i18n/en.json</file>
-  <file>i18n/da.json</file>
-</qresource></RCC>

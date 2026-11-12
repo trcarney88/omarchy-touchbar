@@ -6,29 +6,26 @@ Touch Bar apps for the Apple silicon MacBook, rendered with
 [Rune](https://github.com/anomalyco/rune). Starts at an extensible launcher with
 **F**, **AI**, and a **speaker icon** for Volume. Each app has a **back arrow at
 the far right** that returns to the launcher; navigation activates on release
-inside its original button. A shared app catalog in `src/controls.cpp` defines
+inside its original button. A shared app catalog in `src/controls.rs` defines
 launcher entries and hit targets, ready for more apps without another mode toggle.
 
 ## Rust desktop simulator (default)
 
 The repository-root Cargo executable is the default build and interactive desktop
-simulator. It uses winit 0.30 and softbuffer with Rune's typed UI API; it does not
-require Qt. The simulator, preview PNG renderer, CLI, configuration, language and
-monitor selection are ported. Native macOS support is intended but has not been
-validated; CI configuration is not evidence of a successful macOS run. See
+simulator. It uses winit 0.30 and softbuffer with Rune's typed UI API. The simulator,
+preview PNG renderer, CLI, configuration, language and monitor selection are Rust.
+The Linux physical-panel backend is available as a feature and has been validated
+on Linux; physical-panel support is Linux-only, not available on macOS. Native
+macOS simulator validation has not been performed; see
 [`docs/macos-validation.md`](docs/macos-validation.md) for the manual checklist.
 
-The hardware feature modules remain experimental and partial. A safety audit and
-real-hardware validation are still blocked; root physical-panel access is rejected.
-C++/Qt remains the physical backend until its replacement is verified. Do not treat
-the experimental `PKGBUILD.rust` as a supported installation workflow.
+The Linux package installs the Rust service and Linux hardware feature. It runs as
+the user and rejects root physical-panel access.
 
 ```sh
 cargo run --release -- simulate
 cargo run --release -- simulate --scenario fire
-# Equivalent Makefile wrappers:
-make rust-simulator
-make run-rust-simulator ARGS="--scenario fire"
+make run-simulator ARGS="--scenario fire"
 cargo test --locked
 ```
 
@@ -51,8 +48,7 @@ The Rust root `test` CLI supports the existing command set, scenarios, `load`,
 simulator windows. Simulator overrides win over the base fixture or scene, poll
 every 500 ms, and clearing them restores the latest valid base. Generated simulator
 data uses a frozen clock; loaded fixtures retain their supplied clock. Without
-`--simulator`, the CLI targets the physical test-state path, which can affect an
-existing legacy physical service through the shared state file; root commands do
+`--simulator`, the CLI targets the physical test-state path; root commands do
 not all operate in memory. Rust simulator state itself has no physical side effects.
 
 ```sh
@@ -61,9 +57,7 @@ target/release/touchmeter test clear --simulator
 ```
 
 The Rust `config` CLI supports `path`, `show`, `get`, `set`, and `reset`, including
-the live fire-threshold setting, polled every 500 ms. CLI state files are compatible
-with C++ targets; no existing installed service behavior is changed by this
-experimental migration.
+the live fire-threshold setting, polled every 500 ms.
 
 ```sh
 target/release/touchmeter config path
@@ -73,61 +67,7 @@ target/release/touchmeter config set fire.trigger-minutes 60
 target/release/touchmeter config reset fire.trigger-minutes
 ```
 
-Legacy C++ build paths remain available, and the installed service is unchanged.
-Rust hardware modules/adapters are not yet a validated physical backend; real audio,
-credential access, collectors and desktop key injection must not be assumed ported.
-
-The sections below describe shared and legacy workflows; commands that explicitly
-use `build-legacy` or `run-legacy-simulator` select the C++/Qt implementation.
-
-## Desktop simulator
-
-### Legacy C++/Qt standalone build (Linux and macOS)
-
-No Omarchy installation or Touch Bar is needed. This build excludes DRM leasing,
-evdev, virtual keyboard injection, session D-Bus, and generated Wayland protocols.
-It uses bundled provider logos and the default palette. Audio and F keys are
-always fictional. A GPU backend is still needed: Metal on macOS, Vulkan on Linux
-(Mesa software Vulkan can be used for headless tests).
-
-Build prerequisites: a C/C++ compiler, Make, Qt 6 development tools, and a current
-stable Rust/Cargo toolchain (`rustup`). Build natively on each operating system
-and CPU architecture; a Linux binary will not run on macOS.
-
-```sh
-# macOS: install Xcode Command Line Tools, Homebrew, and Rust via rustup first.
-xcode-select --install
-brew install qt
-# Linux (Debian/Ubuntu), in addition to Rust:
-sudo apt install build-essential pkg-config qt6-base-dev qt6-base-dev-tools qmake6 \
-  libfontconfig1-dev libvulkan-dev mesa-vulkan-drivers libxkbcommon-dev libwayland-dev
-# On a Wayland desktop, also install qt6-wayland.
-
-make build-legacy-simulator
-make run-legacy-simulator
-make run-legacy-simulator ARGS="--scenario fire --fullscreen"
-make test-legacy-simulator
-```
-
-If Qt isn't discoverable, set `QMAKE=/path/to/Qt6/bin/qmake`. Homebrew Qt is
-detected automatically. The executable is `build/simulator/touchmeter-simulator`;
-it opens the simulator with no arguments. You can also use `bin/simulate` to
-build and run it. It links your installed Qt libraries; it is not a self-contained
-macOS app bundle or distributable installer.
-
-```sh
-build/simulator/touchmeter-simulator --scenario fire
-build/simulator/touchmeter-simulator test set claude --enabled --short 95
-build/simulator/touchmeter-simulator test clear
-```
-
-The standalone binary's `test` commands **always target simulator state**
-(`--simulator` is accepted but optional). With no `XDG_RUNTIME_DIR`, it creates
-a private per-user runtime directory under the OS temporary directory, so the
-CLI and running windows share overrides on macOS too. `preview` and `config`
-remain available; `open` is explicitly rejected.
-
-### Full installation
+## Desktop simulator and Linux installation
 
 Demo the same Touch Bar on a normal monitor, without leasing the physical panel:
 
@@ -316,16 +256,14 @@ still suppress it. A frozen-clock example is in `docs/fixtures/fire.json`.
 - Renders a 2008×60 Rune scene into an offscreen GPU texture, reads it back,
   and rotates it into the leased DRM dumb buffer. Updates on input/data changes
   and every fifteen seconds. The Rune revision and Cargo dependencies are pinned.
-  A small Rust static library owns the UI; the existing C++/Qt Core/Gui/DBus host
-  retains display leasing, session policy, raw touch and virtual keyboard safety.
-  There is no Qt Quick/QML rendering or desktop window.
+  The Rust executable owns the UI, display leasing, session policy, raw touch and
+  virtual keyboard safety. The desktop simulator uses a normal resizable window.
 - Reads `~/.local/state/omarchy/agents/usage/<provider>.json`. Every five minutes
   and when switching providers it runs
   `omarchy agent usage update --limits-only <provider>` through Omarchy's existing
-  collector. A separate read-only Python helper uses the installed collectors'
-  credential readers and returns only availability booleans. It never calls their
-  network/refresh routines, logs credentials, or writes authentication files.
-  The UI receives no keys/tokens. Stop the service to stop refresh requests.
+  collector. Credential availability is probed by the Rust application using
+  native platform credential readers; credentials are not sent to the UI. Stop
+  the service to stop refresh requests.
 - Follows Omarchy's background, foreground, accent, warning colors, corner
   rounding, and language live. English and Danish translations
   are included; other languages fall back to English. Data is always plain text.
@@ -356,30 +294,26 @@ still suppress it. A frozen-clock example is in `docs/fixtures/fire.json`.
 
 ## Build and install
 
-The default `make` / `bin/build` path builds the Qt-free Rust executable; it needs
-a stable Rust toolchain plus platform graphics, windowing and font libraries.
-Use the explicit `build-legacy` / `bin/build-legacy` paths for the C++/Qt backend.
-The installed service and existing installation workflow remain legacy and unchanged.
-Do not infer that the experimental Rust package is installable or hardware-ready.
-
-Legacy dependencies: Rust/Cargo (edition 2024), Qt 6 base, libdrm, libevdev, libxkbcommon,
-wayland-client, wayland-protocols, qmake6, make, a C++17 compiler, Python 3, Omarchy,
-brightnessctl, Qt 6 Wayland (for the desktop simulator), WirePlumber (`wpctl`), a PipeWire audio session, Vulkan loader and a
-working Vulkan driver (or Mesa lavapipe).
-The first build downloads Rune and Cargo dependencies.
+The default `make` / `bin/build` path builds the Rust executable; it needs Rust/Cargo
+(edition 2024) and platform graphics, windowing and font libraries. Linux hardware
+builds additionally use libdrm, libevdev, libxkbcommon, wayland-client,
+wayland-protocols, Omarchy and brightnessctl. Volume support uses WirePlumber
+(`wpctl`) and a PipeWire audio session. A Vulkan loader and working Vulkan driver (or Mesa lavapipe) are needed for the offscreen renderer.
 
 ```sh
 make
 cargo test --locked
-bin/build-legacy
-bin/test-legacy
+make simulator
+make test-simulator
 bin/install
 ```
 
 The installer builds a local Arch package, asks for administrator authorization
 (`sudo` in a terminal, a graphical prompt otherwise), installs/reloads the narrowly
-scoped udev rule, and enables/restarts `touchmeter.service` for your user.
-Source stays in `~/Work/touchmeter`. No repository is published or added.
+scoped udev rule, and enables/restarts `touchmeter.service` for your user. Source
+stays in `~/Work/touchmeter`. No repository is published or added.
+
+The first build downloads Rune and Cargo dependencies.
 
 The service sets Touch Bar brightness to 25% at startup. To adjust it now:
 
@@ -556,7 +490,7 @@ menu/back navigation, drag-off releases, wake-only taps, coordinate conversion, 
 palette parsing. Provider tests cover disabled selection, drag-off, wake-only,
 and credential removal during a touch. Rune headless tests inspect actual element
 geometry and logo coverage; integration tests render the real scene in all modes.
-The credential helper tests verify fail-closed behavior and boolean-only output.
+Credential probing is tested for fail-closed behavior and boolean-only output.
 Volume tests use a mock `wpctl` to check write coalescing, mute, external changes,
 clamping, unavailable audio and cancellation. Simulated drag tests exercise the real
 controller, and preview tests verify that no audio commands are issued.

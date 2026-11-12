@@ -1,5 +1,5 @@
-//! State-file implementation for the legacy `touchmeter test` command.
-use crate::fixtures::{scenario, Fixture, MAX_FIXTURE_BYTES, PROVIDER_IDS};
+//! State-file implementation for the `touchmeter test` command.
+use crate::fixtures::{Fixture, MAX_FIXTURE_BYTES, PROVIDER_IDS, scenario};
 use chrono::{SecondsFormat, Utc};
 use std::{
     fs::{self, OpenOptions},

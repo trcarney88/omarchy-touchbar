@@ -4,9 +4,9 @@ use std::{
     os::{fd::AsRawFd, unix::process::CommandExt},
     process::{Command, Stdio},
     sync::{
+        Arc,
         atomic::{AtomicBool, AtomicU8, Ordering},
         mpsc::{self, Receiver, TryRecvError},
-        Arc,
     },
     thread,
     time::{Duration, Instant},

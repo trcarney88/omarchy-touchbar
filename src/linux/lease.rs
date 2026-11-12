@@ -9,8 +9,8 @@ mod adapter {
         time::{Duration, Instant},
     };
     use wayland_client::{
-        protocol::{wl_callback, wl_registry},
         Connection, Dispatch, EventQueue, Proxy, QueueHandle,
+        protocol::{wl_callback, wl_registry},
     };
     use wayland_protocols::wp::drm_lease::v1::client::{
         wp_drm_lease_connector_v1::{self, WpDrmLeaseConnectorV1},

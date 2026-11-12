@@ -131,11 +131,7 @@ impl Controller {
         let w = 1864. / 12.;
         let i = ((x - 12.) / w) as i32;
         let l = x - 12. - i as f64 * w;
-        if l >= 3. && l < w - 3. {
-            i + 1
-        } else {
-            0
-        }
+        if l >= 3. && l < w - 3. { i + 1 } else { 0 }
     }
     fn action(x: f64, y: f64, m: &Model) -> Option<Action> {
         if !x.is_finite() || !y.is_finite() || y < 6. || y >= 54. {

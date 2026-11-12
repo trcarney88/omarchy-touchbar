@@ -320,3 +320,189 @@ fn fresh_set_keeps_physical_clock_moving_and_simulator_freezes_it() {
             .is_some()
     );
 }
+
+#[test]
+fn scenario_selection_flags_burn_clear_and_invalid_inputs_preserve_state() {
+    let e = Env::new();
+    for (name, check) in [
+        ("high-usage", "high"),
+        ("stale", "stale"),
+        ("missing", "missing"),
+        ("signed-out", "signed-out"),
+        ("fire", "burn"),
+        ("menu", "menu"),
+        ("volume", "volume"),
+        ("volume-muted", "muted"),
+        ("volume-unavailable", "unavailable"),
+    ] {
+        assert!(
+            e.run(&["test", "scenario", name]).status.success(),
+            "{name}"
+        );
+        let v: serde_json::Value =
+            serde_json::from_slice(&fs::read(e.state(false)).unwrap()).unwrap();
+        match check {
+            "high" => assert_eq!(v["providers"]["claude"]["limits"][0]["percent"], 0.96),
+            "stale" => assert_eq!(v["providers"]["claude"]["limitsStale"], true),
+            "missing" => assert!(
+                v["providers"]["claude"]["limits"]
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            ),
+            "signed-out" => assert_eq!(v["providers"]["claude"]["enabled"], false),
+            "burn" => assert_eq!(v["providers"]["claude"]["burnMinutes"].as_f64(), Some(20.0)),
+            "menu" => assert_eq!(v["mode"], "menu"),
+            "volume" | "muted" | "unavailable" => {
+                assert_eq!(v["mode"], "volume");
+                assert_eq!(v["volume"]["muted"], check == "muted");
+                assert_eq!(v["volume"]["available"], check != "unavailable");
+            }
+            _ => unreachable!(),
+        }
+    }
+    assert!(
+        e.run(&[
+            "test",
+            "set",
+            "claude",
+            "--enabled",
+            "--short",
+            "95",
+            "--weekly",
+            "42",
+            "--stale"
+        ])
+        .status
+        .success()
+    );
+    let v: serde_json::Value = serde_json::from_slice(&fs::read(e.state(false)).unwrap()).unwrap();
+    assert_eq!(v["selected"], "claude");
+    assert_eq!(v["mode"], "usage");
+    assert_eq!(v["providers"]["claude"]["limits"][0]["percent"], 0.95);
+    assert_eq!(v["providers"]["claude"]["limits"][1]["percent"], 0.42);
+    assert_eq!(v["providers"]["claude"]["limitsStale"], true);
+    assert!(
+        e.run(&[
+            "test",
+            "set",
+            "claude",
+            "--disabled",
+            "--fresh",
+            "--mode",
+            "functions"
+        ])
+        .status
+        .success()
+    );
+    let v: serde_json::Value = serde_json::from_slice(&fs::read(e.state(false)).unwrap()).unwrap();
+    assert_eq!(v["providers"]["claude"]["enabled"], false);
+    assert_eq!(v["providers"]["claude"]["limitsStale"], false);
+    assert_eq!(v["mode"], "functions");
+    assert!(
+        e.run(&["test", "set", "claude", "--enabled", "--burn-minutes", "25"])
+            .status
+            .success()
+    );
+    let v: serde_json::Value = serde_json::from_slice(&fs::read(e.state(false)).unwrap()).unwrap();
+    assert_eq!(v["providers"]["claude"]["burnMinutes"].as_f64(), Some(25.0));
+    assert!(
+        !e.run(&["test", "set", "claude", "--burn-minutes", "nan"])
+            .status
+            .success()
+    );
+    assert!(
+        !e.run(&["test", "set", "claude", "--burn-minutes", "-1"])
+            .status
+            .success()
+    );
+    assert!(
+        e.run(&["test", "set", "claude", "--no-burn"])
+            .status
+            .success()
+    );
+    let v: serde_json::Value = serde_json::from_slice(&fs::read(e.state(false)).unwrap()).unwrap();
+    assert!(v["providers"]["claude"].get("burnMinutes").is_none());
+    let before = fs::read(e.state(false)).unwrap();
+    for args in [
+        vec!["test", "scenario", "nope"],
+        vec!["test", "set", "unknown", "--enabled"],
+        vec!["test", "set", "claude", "--weekly", "nan"],
+        vec!["test", "set", "claude", "--short"],
+        vec!["test", "set", "claude", "--mode", "invalid"],
+        vec!["test", "clear", "extra"],
+        vec!["test", "clear", "--simulator", "--simulator"],
+    ] {
+        assert!(!e.run(&args).status.success(), "{args:?}");
+        assert_eq!(fs::read(e.state(false)).unwrap(), before);
+    }
+    assert!(
+        e.run(&["test", "--simulator", "scenario", "fire"])
+            .status
+            .success()
+    );
+    assert!(e.run(&["test", "clear", "--simulator"]).status.success());
+    assert_eq!(fs::read(e.state(false)).unwrap(), before);
+    assert!(e.run(&["test", "clear"]).status.success());
+    assert!(e.run(&["test", "clear"]).status.success());
+    assert!(!e.state(false).exists());
+}
+
+#[test]
+fn invalid_fixture_inputs_and_volume_values_never_replace_saved_state() {
+    let e = Env::new();
+    assert!(
+        e.run(&["test", "scenario", "all-providers"])
+            .status
+            .success()
+    );
+    let before = fs::read(e.state(false)).unwrap();
+    let fixture = e.0.join("invalid.json");
+    let oversized = "x".repeat(65537);
+    for content in ["not-json", "[]", "{}", oversized.as_str()] {
+        fs::write(&fixture, content).unwrap();
+        assert!(
+            !e.run(&["test", "load", fixture.to_str().unwrap()])
+                .status
+                .success()
+        );
+        assert_eq!(fs::read(e.state(false)).unwrap(), before);
+    }
+    let base: serde_json::Value = serde_json::from_slice(&before).unwrap();
+    for (field, value) in [
+        ("version", serde_json::json!(2)),
+        ("mode", serde_json::json!("invalid")),
+        ("selected", serde_json::json!("unknown")),
+        ("now", serde_json::json!("not-time")),
+        ("credentials", serde_json::json!("not-allowed")),
+    ] {
+        let mut invalid = base.clone();
+        invalid[field] = value;
+        fs::write(&fixture, serde_json::to_vec(&invalid).unwrap()).unwrap();
+        assert!(
+            !e.run(&["test", "load", fixture.to_str().unwrap()])
+                .status
+                .success(),
+            "{field}"
+        );
+        assert_eq!(fs::read(e.state(false)).unwrap(), before);
+    }
+    for volume in [
+        serde_json::json!({"percent":101}),
+        serde_json::json!({"percent":-1}),
+        serde_json::json!({"percent":"50"}),
+        serde_json::json!({"muted":"false"}),
+        serde_json::json!({"available":1}),
+        serde_json::json!({"unknown":true}),
+    ] {
+        let mut invalid = base.clone();
+        invalid["volume"] = volume;
+        fs::write(&fixture, serde_json::to_vec(&invalid).unwrap()).unwrap();
+        assert!(
+            !e.run(&["test", "load", fixture.to_str().unwrap()])
+                .status
+                .success()
+        );
+        assert_eq!(fs::read(e.state(false)).unwrap(), before);
+    }
+}

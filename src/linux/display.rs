@@ -136,7 +136,7 @@ struct Guard {
 #[cfg(all(target_os = "linux", feature = "linux-hardware"))]
 impl Drop for Guard {
     fn drop(&mut self) {
-        use drm::control::{atomic::AtomicModeReq, AtomicCommitFlags, Device as _};
+        use drm::control::{AtomicCommitFlags, Device as _, atomic::AtomicModeReq};
         if let Some((crtc, prop)) = self.active {
             let mut req = AtomicModeReq::new();
             req.add_property(crtc, prop, drm::control::property::Value::Boolean(false));
@@ -183,11 +183,11 @@ impl drm::buffer::PlanarBuffer for SinglePlane<'_> {
 #[cfg(all(target_os = "linux", feature = "linux-hardware"))]
 impl DrmDisplay {
     pub fn from_lease_fd(fd: OwnedFd) -> std::io::Result<Self> {
-        use drm::control::{
-            atomic::AtomicModeReq, connector, property, AtomicCommitFlags, Device as _,
-        };
         use drm::ClientCapability;
         use drm::Device as _;
+        use drm::control::{
+            AtomicCommitFlags, Device as _, atomic::AtomicModeReq, connector, property,
+        };
         use std::io::{Error, ErrorKind};
         let mut guard = Guard {
             card: Card(fd),
@@ -371,7 +371,7 @@ impl DrmDisplay {
         if self.active == Some(active) {
             return Ok(());
         }
-        use drm::control::{atomic::AtomicModeReq, property, AtomicCommitFlags, Device as _};
+        use drm::control::{AtomicCommitFlags, Device as _, atomic::AtomicModeReq, property};
         let mut req = AtomicModeReq::new();
         req.add_property(
             self.crtc,

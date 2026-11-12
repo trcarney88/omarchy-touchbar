@@ -247,11 +247,13 @@ fn live_snapshot_projects_the_complete_constructor_availability_map() {
             .unwrap()
             .enabled
     );
-    assert!(model
-        .providers
-        .iter()
-        .filter(|p| p.id != "codex" && p.id != "claude")
-        .all(|p| !p.enabled));
+    assert!(
+        model
+            .providers
+            .iter()
+            .filter(|p| p.id != "codex" && p.id != "claude")
+            .all(|p| !p.enabled)
+    );
 
     service.shutdown();
     fs::remove_dir_all(root).unwrap();
@@ -388,9 +390,11 @@ fn live_fixture_picker_selection_and_armed_menu_contact_survive_polls() {
         &mut model,
     );
     assert!(controller.cancel_if_view_changed(&mut model).is_none());
-    assert!(controller
-        .handle(InputEvent::End, &mut model)
-        .contains(&Effect::PageChanged));
+    assert!(
+        controller
+            .handle(InputEvent::End, &mut model)
+            .contains(&Effect::PageChanged)
+    );
     assert_eq!(model.app, "functions");
     data.shutdown();
     fs::remove_dir_all(root).unwrap();

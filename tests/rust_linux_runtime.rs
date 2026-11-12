@@ -129,9 +129,11 @@ mod lock_tests {
             fs::Permissions::from_mode(0o600),
         )
         .unwrap();
-        assert!(RuntimeLock::acquire_in(&dir, 45, "host".into())
-            .unwrap_err()
-            .contains("AlreadyRunning"));
+        assert!(
+            RuntimeLock::acquire_in(&dir, 45, "host".into())
+                .unwrap_err()
+                .contains("AlreadyRunning")
+        );
         fs::remove_dir_all(dir).unwrap();
     }
 }
@@ -153,7 +155,7 @@ fn runtime_core_expires_and_idle_requires_fresh_authorization() {
 
 #[test]
 fn refresh_keeps_unexpired_grant_and_panel_ack_requires_proof() {
-    use runtime::{acknowledge_after_quiescence, RuntimeCore};
+    use runtime::{RuntimeCore, acknowledge_after_quiescence};
     let now = Instant::now();
     let mut core = RuntimeCore::default();
     core.authorize_until(now + Duration::from_secs(1));
@@ -173,7 +175,7 @@ fn refresh_keeps_unexpired_grant_and_panel_ack_requires_proof() {
 
 #[test]
 fn freshness_gate_quiesces_before_privileged_dispatch_or_present() {
-    use runtime::{ensure_fresh_or_quiesce, RuntimeCore};
+    use runtime::{RuntimeCore, ensure_fresh_or_quiesce};
     let now = Instant::now();
     let deadline = now + Duration::from_millis(20);
     let mut core = RuntimeCore::default();
@@ -181,11 +183,13 @@ fn freshness_gate_quiesces_before_privileged_dispatch_or_present() {
     let privileged = std::cell::Cell::new(0);
     let barriers = std::cell::Cell::new(0);
 
-    assert!(ensure_fresh_or_quiesce(&mut core, now, false, |_| {
-        barriers.set(barriers.get() + 1);
-        Ok(())
-    })
-    .unwrap());
+    assert!(
+        ensure_fresh_or_quiesce(&mut core, now, false, |_| {
+            barriers.set(barriers.get() + 1);
+            Ok(())
+        })
+        .unwrap()
+    );
     privileged.set(privileged.get() + 1);
     assert_eq!(privileged.get(), 1);
 
@@ -320,7 +324,7 @@ fn retained_shutdown_retries_only_on_retry_and_force_is_explicit() {
 
 #[test]
 fn shared_shutdown_releases_before_wait_and_never_acks_failed_off() {
-    use runtime::{ordered_shutdown, ShutdownActuator};
+    use runtime::{ShutdownActuator, ordered_shutdown};
     struct Fake {
         trace: Vec<&'static str>,
         fail: bool,
@@ -397,17 +401,22 @@ fn controller_idle_wake_consumes_first_contact() {
     let mut controller = controls::Controller::default();
     controller.set_sleeping(true, &mut model);
     let effects = controller.handle(controls::InputEvent::Begin(80., 20.), &mut model);
-    assert!(effects
-        .iter()
-        .any(|e| matches!(e, controls::Effect::Activity)));
-    assert!(!effects
-        .iter()
-        .any(|e| matches!(e, controls::Effect::FunctionKey { pressed: true, .. })));
+    assert!(
+        effects
+            .iter()
+            .any(|e| matches!(e, controls::Effect::Activity))
+    );
+    assert!(
+        !effects
+            .iter()
+            .any(|e| matches!(e, controls::Effect::FunctionKey { pressed: true, .. }))
+    );
     controller.handle(controls::InputEvent::End, &mut model);
     let next = controller.handle(controls::InputEvent::Begin(80., 20.), &mut model);
-    assert!(next
-        .iter()
-        .any(|e| matches!(e, controls::Effect::FunctionKey { pressed: true, .. })));
+    assert!(
+        next.iter()
+            .any(|e| matches!(e, controls::Effect::FunctionKey { pressed: true, .. }))
+    );
 }
 
 #[test]

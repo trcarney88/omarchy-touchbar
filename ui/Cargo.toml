@@ -4,7 +4,7 @@ version = "0.3.0"
 edition = "2024"
 
 [lib]
-crate-type = ["staticlib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 rune = { git = "https://github.com/anomalyco/rune", rev = "2a44156b21d63b0342a366b26d9222a6edd4622c", default-features = false, features = ["svg"] }

@@ -192,7 +192,7 @@ fn apply_appearance(model: &mut Model, snapshot: &appearance::AppearanceSnapshot
 }
 fn help() {
     println!(
-        "touchmeter — experimental Rust Rune simulator\nUsage: touchmeter [simulate] [--scenario all-providers|high-usage|stale|missing|signed-out|fire|menu|volume|volume-muted|volume-unavailable | --fixture FILE] [--page menu|ai|functions|providers|volume] [--monitor INDEX|NAME] [--fullscreen] [--demo] [--language CODE]\n       touchmeter open (Linux hardware build only)\n       touchmeter preview OUTPUT.png [--demo|--fixture FILE|--scenario NAME] [--menu|--ai|--functions|--providers|--volume] [--language CODE]\n       touchmeter test ... | touchmeter config ..."
+        "touchmeter — Rust Rune desktop simulator\nUsage: touchmeter [simulate] [--scenario all-providers|high-usage|stale|missing|signed-out|fire|menu|volume|volume-muted|volume-unavailable | --fixture FILE] [--page menu|ai|functions|providers|volume] [--monitor INDEX|NAME] [--fullscreen] [--demo] [--language CODE]\n       touchmeter open (Linux hardware build only)\n       touchmeter preview OUTPUT.png [--demo|--fixture FILE|--scenario NAME] [--menu|--ai|--functions|--providers|--volume] [--language CODE]\n       touchmeter test ... | touchmeter config ..."
     );
 }
 struct AppState {

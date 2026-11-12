@@ -36,8 +36,8 @@ mod adapter {
 
     use std::{os::fd::BorrowedFd, time::Duration};
     use wayland_client::{
-        protocol::{wl_callback, wl_registry, wl_seat},
         Connection, Dispatch, EventQueue, Proxy, QueueHandle,
+        protocol::{wl_callback, wl_registry, wl_seat},
     };
 
     fn callback_matches(completed: Option<u32>, expected: u32) -> bool {

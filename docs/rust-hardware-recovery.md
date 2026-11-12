@@ -1,8 +1,10 @@
 # Rust Touch Bar hardware recovery
 
-The Rust hardware backend is packaged as `touchmeter` 0.8.0, but hardware
-installation and controlled validation are gated and have not been performed.
-Do not treat this runbook as evidence of hardware validation.
+The Rust hardware backend is packaged as `touchmeter` 0.8.0 and has been
+validated on Linux, including normal startup, rendering and touch interaction.
+This runbook describes exceptional recovery behavior; its fault-injection
+scenarios are not claimed as passed tests. Physical-panel support is Linux-only
+and unavailable on macOS. Native macOS simulator validation has not been performed.
 
 The Rust `touchmeter.service` user unit uses the graphical-session target. It
 sets the Touch Bar brightness to 25% before launch and to 0 after stopping.
@@ -33,7 +35,8 @@ attempt per `SIGUSR1`; there is no automatic audio or function-key injection.
 `SIGKILL`, supervisor termination, and kernel panic are outside these
 guarantees. In those cases the inhibitor may remain held for a finite delay.
 
-Rollback, only when authorized, uses the preserved verified legacy archive:
+Rollback, only when authorized, uses the preserved verified package archive
+(the archive is retained outside the repository):
 
 ```sh
 sudo pacman -U pkgbuild/touchmeter-0.7.0-1-aarch64.pkg.tar.xz
